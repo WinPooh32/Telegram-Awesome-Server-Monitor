@@ -15,5 +15,9 @@ github.com/go-telegram-bot-api/telegram-bot-api
 Build:
 ```
 $ cd AwesomeServerMonitor
+
+$ touch token.line
+$ echo 'YOUR_BOT_TOKEN' > token.line
+
 $ go build *.go
 ```
