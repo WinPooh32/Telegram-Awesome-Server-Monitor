@@ -5,6 +5,7 @@ import (
 	"log"
 	"bufio"
 	"os"
+	"runtime"
 )
 
 func ReadToken(filename string)(string) {
@@ -15,6 +16,8 @@ func ReadToken(filename string)(string) {
 }
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	//channel for sharing plot image
 	var monChan = make(chan *bytes.Buffer)
 

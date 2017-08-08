@@ -35,8 +35,6 @@ func StartMonitoring(monChan chan *bytes.Buffer){
 		cpuPoints [POINTS]float64
 		ramPoints [POINTS]float64
 		xAxisPoints [POINTS]float64
-
-		imgBuffer = bytes.NewBuffer([]byte{})
 	)
 
 	//init data arrays
@@ -137,6 +135,8 @@ func StartMonitoring(monChan chan *bytes.Buffer){
 				},
 			},
 		}
+
+		imgBuffer := bytes.NewBuffer([]byte{})
 
 		graph.Render(chart.PNG, imgBuffer)
 
