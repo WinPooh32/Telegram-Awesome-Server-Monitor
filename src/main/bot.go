@@ -118,13 +118,13 @@ func ServeNewUser(user *User, send chan *API_Request, response chan *API_Respons
 	}
 }
 
-func ServeBot(token string, monChan chan *bytes.Buffer){
+func ServeBot(token string, monChan chan *bytes.Buffer, lastChan chan []string){
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	bot.Debug = true
+	bot.Debug = false
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
@@ -165,15 +165,13 @@ func ServeBot(token string, monChan chan *bytes.Buffer){
 					ch_response_msg <- &resp
 
 				case myplot_bytes:= <-monChan:
-					for k, v := range users {
+					for _, v := range users {
 						file := tgbotapi.FileBytes{
 							Bytes: myplot_bytes.Bytes(),
 							Name:  "myplot.png",
 						}
 
 						msg := tgbotapi.NewPhotoUpload(v.chatID, file)
-
-						println(k, " ", v.chatID)
 
 						if v.monMsgID != 0 {
 							bot.DeleteMessage(tgbotapi.DeleteMessageConfig{
@@ -184,6 +182,23 @@ func ServeBot(token string, monChan chan *bytes.Buffer){
 
 						delivered, _ := bot.Send(msg)
 						v.monMsgID = delivered.MessageID
+					}
+
+				case last := <- lastChan:
+					s := ""
+
+					for i := range last {
+						if i != len(last) - 1 {
+							s += last[i] + ", "
+						}else{
+							s += last[i]
+						}
+					}
+
+					for _, v := range users {
+						msg := tgbotapi.NewMessage(v.chatID, "New log in from new ip: " + s + "\nIs it you?")
+						msg.DisableNotification = false
+						bot.Send(msg)
 					}
 			}
 		}

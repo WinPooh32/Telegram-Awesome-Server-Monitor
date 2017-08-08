@@ -24,7 +24,7 @@ func ShiftPoints(pts []float64){
 	}
 }
 
-func StartMonitoring(monChan chan *bytes.Buffer){
+func StartMonitoringResources(monChan chan *bytes.Buffer){
 	const (
 		DELAY_SEC = 5
 		DELAY = DELAY_SEC * time.Second
