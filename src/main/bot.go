@@ -7,23 +7,6 @@ import (
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-const (
-	EVENT_KILL    = "1"
-	EVENT_ACTION  = "2"
-)
-
-const (
-	REQ_SEND = iota
-	REQ_DELETE
-	REQ_EDIT
-)
-
-const (
-	RES_SEND = iota
-	RES_DELETE
-	RES_EDIT
-)
-
 type API_Request struct {
 	request int
 	chattable tgbotapi.Chattable
@@ -40,14 +23,17 @@ type API_Response struct {
 
 type User struct {
 	chatID   int64
+	monMsgID int
+	state    int
 	msg      chan *tgbotapi.Message
 	event    chan *string
-	monMsgID int
 }
 
 func NewUser() User{
 	return User{
 		chatID: 0,
+		monMsgID: 0,
+		state: STATE_MAIN,
 		msg: make(chan *tgbotapi.Message),
 		event: make(chan *string),
 	}
@@ -68,49 +54,81 @@ func FindUser(users *map[int]*User, userID int) (*User, bool){
 	return user, !ok
 }
 
+func SendText(text string, user *User, send chan *API_Request, response chan *API_Response){
+	msg := tgbotapi.NewMessage((*user).chatID, text)
+
+	req := API_Request{
+		request: REQ_SEND,
+		chattable: msg,
+		chatId: (*user).chatID,
+	}
+
+	send <- &req
+	<- response
+}
+
+func OnEvent(user *User, event *string, send chan *API_Request, response chan *API_Response){
+	switch *event {
+		case EVENT_KILL:
+			//quit = true
+			println("EVENT_KILL")
+
+		case EVENT_ACTION:
+			println("EVENT_ACTION")
+
+		case EVENT_TO_MAIN:
+			(*user).state = STATE_MAIN
+
+			msg := tgbotapi.NewMessage((*user).chatID, "Choose command for bot👇")
+			msg.ReplyMarkup, _ = inlineKeyboards["MainLayout"]
+
+			req := API_Request{
+				request: REQ_SEND,
+				chattable: msg,
+				chatId: (*user).chatID,
+			}
+
+			send <- &req
+			<- response
+
+		case EVENT_TO_REALTIME:
+			(*user).state = STATE_REALTIME
+			SendText("Preparing realtime graph for you...\nType /stop to stop updating.", user, send, response)
+
+		default:
+			log.Println("Unknown bot event recieved: ", *event)
+	}
+}
+
 func ServeNewUser(user *User, send chan *API_Request, response chan *API_Response){
 	quit := false
 
 	for !quit {
 		select{
 		case message := <- user.msg:
-			println(message.Text)
+			var event string
 
 			switch message.Command() {
-			case "start":
-				req := API_Request{
-					request: REQ_SEND,
-					chattable: tgbotapi.NewMessage(user.chatID, "STARTED!"),
-				}
+				case "start":
+					event = EVENT_TO_MAIN
 
+				case "stop":
+					event = EVENT_TO_MAIN
 
-				send <- &req
-				resp := <- response
-				println("MESSAGE ID: ", resp.message.MessageID)
+				case "graph":
+					if message.CommandArguments() == "realtime" {
+						event = EVENT_TO_REALTIME
+					}else{
+						event = EVENT_TO_STEPPED
+					}
+			}
 
-
-				req = API_Request{
-					request: REQ_DELETE,
-					deleteMsgId: resp.message.MessageID,
-					chatId: user.chatID,
-				}
-
-				send <- &req
-				resp = <- response
-
-			case "stop":
+			if event != "" {
+				OnEvent(user, &event, send, response)
 			}
 
 		case event := <- user.event:
-			switch *event {
-			case EVENT_KILL:
-				//quit = true
-				println("EVENT_KILL")
-			case EVENT_ACTION:
-				println("EVENT_ACTION")
-			default:
-				log.Println("Unknown bot event recieved: ", *event)
-			}
+			OnEvent(user, event, send, response)
 		}
 	}
 }
@@ -163,6 +181,10 @@ func ServeBot(token string, monChan chan *bytes.Buffer, lastChan chan []string){
 
 				case myplot_bytes:= <-monChan:
 					for _, v := range users {
+						if v.state != STATE_REALTIME {
+							continue
+						}
+
 						file := tgbotapi.FileBytes{
 							Bytes: myplot_bytes.Bytes(),
 							Name:  "myplot.png",
@@ -211,9 +233,10 @@ func ServeBot(token string, monChan chan *bytes.Buffer, lastChan chan []string){
 
 			if isNew {
 				user.chatID = update.CallbackQuery.Message.Chat.ID
-				println("CHATID ON CALLBACK: ", user.chatID)
 				go ServeNewUser(user, ch_send_msg, ch_response_msg)
 			}
+
+			bot.AnswerCallbackQuery(tgbotapi.CallbackConfig{CallbackQueryID: update.CallbackQuery.ID, ShowAlert: false})
 
 			user.event <- &update.CallbackQuery.Data
 
@@ -224,7 +247,6 @@ func ServeBot(token string, monChan chan *bytes.Buffer, lastChan chan []string){
 
 			if isNew {
 				user.chatID = update.Message.Chat.ID
-				println("CHATID ON MESSAGE: ", user.chatID)
 				go ServeNewUser(user, ch_send_msg, ch_response_msg)
 			}
 

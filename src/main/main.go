@@ -26,6 +26,8 @@ func main() {
 	//init
 	UpdateLastLogins()
 
+	InitKeyboards()
+
 	go StartMonitoringResources(monChan)
 	go StartMonitoringLast(lastChan)
 
