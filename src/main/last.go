@@ -6,6 +6,7 @@ import (
 	"strings"
 	"net"
 	"time"
+	"fmt"
 )
 
 //key is ip, values is username
@@ -44,6 +45,39 @@ func UpdateLastLogins() []string{
 	cmd.Wait()
 
 	return newips[:]
+}
+
+func FixDate(date string) string {
+	list := strings.Split(date, " ")
+	listTime := strings.Split(list[3], ":")
+	return fmt.Sprintf("%s %s %s %s:%s", list[0], list[1], list[2], listTime[0], listTime[1])
+}
+
+func MakeLastReport() string {
+	cmd := exec.Command("utmpdump", "/var/log/wtmp")
+
+	stdout, _ := cmd.StdoutPipe()
+	cmd.Start()
+
+	in := bufio.NewScanner(stdout)
+
+	var report string = "```"
+
+	for in.Scan() {
+		list := strings.Split(in.Text(), "[")
+
+		if list[1] != "7] " {continue}
+
+		user := strings.TrimSpace(strings.TrimRight(list[4], "]  "))
+		ip := strings.TrimSpace(strings.TrimRight(list[7], "]  "))
+		date := strings.TrimSpace(strings.TrimRight(list[8], "]  "))
+
+		report += fmt.Sprintf("\n%-6s  %-10s  %s", user, ip, FixDate(date))
+	}
+
+	cmd.Wait()
+
+	return report + "\n```"
 }
 
 func StartMonitoringLast(lastChan chan []string){

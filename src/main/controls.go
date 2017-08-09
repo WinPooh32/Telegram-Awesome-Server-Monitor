@@ -18,14 +18,22 @@ func MakeMainLayout() {
 }
 
 func MakeUpdateLayout(){
-	btn1 := tgbotapi.NewInlineKeyboardButtonData("🔄Refresh", EVENT_REFRESH)
+	btn1 := tgbotapi.NewInlineKeyboardButtonData("🏠Home", EVENT_TO_MAIN)
+	btn2 := tgbotapi.NewInlineKeyboardButtonData("🔄Refresh", EVENT_REFRESH)
 
-	row1 := tgbotapi.NewInlineKeyboardRow(btn1)
+	row1 := tgbotapi.NewInlineKeyboardRow(btn1, btn2)
 
 	inlineKeyboards["Update"] = tgbotapi.NewInlineKeyboardMarkup(row1)
+}
+
+func MakeGoHomeLayout(){
+	btn1 := tgbotapi.NewInlineKeyboardButtonData("🏠Home", EVENT_TO_MAIN)
+	row1 := tgbotapi.NewInlineKeyboardRow(btn1)
+	inlineKeyboards["Home"] = tgbotapi.NewInlineKeyboardMarkup(row1)
 }
 
 func InitKeyboards(){
 	MakeMainLayout()
 	MakeUpdateLayout()
+	MakeGoHomeLayout()
 }

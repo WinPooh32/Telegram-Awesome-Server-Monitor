@@ -54,8 +54,16 @@ func FindUser(users *map[int]*User, userID int) (*User, bool){
 	return user, !ok
 }
 
-func SendText(text string, user *User, send chan *API_Request, response chan *API_Response){
+func SendText(text string, inlineBtns string, markdown bool, user *User, send chan *API_Request, response chan *API_Response){
 	msg := tgbotapi.NewMessage((*user).chatID, text)
+
+	if markdown {
+		msg.ParseMode = tgbotapi.ModeMarkdown
+	}
+
+	if inlineBtns != "" {
+		msg.ReplyMarkup = inlineKeyboards[inlineBtns]
+	}
 
 	req := API_Request{
 		request: REQ_SEND,
@@ -93,14 +101,17 @@ func OnEvent(user *User, event *string, send chan *API_Request, response chan *A
 
 		case EVENT_TO_REALTIME:
 			(*user).state = STATE_REALTIME
-			SendText("Preparing realtime graph for you...\nType /stop to stop updating.", user, send, response)
+			SendText("Preparing realtime graph for you...\nType /stop to stop updating.", "",false, user, send, response)
 
 		case EVENT_TO_STEPPED:
 			(*user).state = STATE_WAIT_REFRESH
-			SendText("Preparing graph for you...", user, send, response)
+			SendText("Preparing graph for you...", "",false, user, send, response)
 
 		case EVENT_REFRESH:
 			(*user).state = STATE_WAIT_REFRESH
+
+		case EVENT_TO_LAST:
+			SendText(MakeLastReport(), "Home",true, user, send, response);
 
 		default:
 			log.Println("Unknown bot event recieved: ", *event)
