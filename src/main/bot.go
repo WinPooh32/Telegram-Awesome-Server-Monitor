@@ -95,6 +95,13 @@ func OnEvent(user *User, event *string, send chan *API_Request, response chan *A
 			(*user).state = STATE_REALTIME
 			SendText("Preparing realtime graph for you...\nType /stop to stop updating.", user, send, response)
 
+		case EVENT_TO_STEPPED:
+			(*user).state = STATE_WAIT_REFRESH
+			SendText("Preparing graph for you...", user, send, response)
+
+		case EVENT_REFRESH:
+			(*user).state = STATE_WAIT_REFRESH
+
 		default:
 			log.Println("Unknown bot event recieved: ", *event)
 	}
@@ -181,9 +188,10 @@ func ServeBot(token string, monChan chan *bytes.Buffer, lastChan chan []string){
 
 				case myplot_bytes:= <-monChan:
 					for _, v := range users {
-						if v.state != STATE_REALTIME {
+						if v.state != STATE_REALTIME && v.state != STATE_WAIT_REFRESH{
 							continue
 						}
+
 
 						file := tgbotapi.FileBytes{
 							Bytes: myplot_bytes.Bytes(),
@@ -192,6 +200,11 @@ func ServeBot(token string, monChan chan *bytes.Buffer, lastChan chan []string){
 
 						msg := tgbotapi.NewPhotoUpload(v.chatID, file)
 						msg.DisableNotification = true
+
+						if v.state == STATE_WAIT_REFRESH {
+							v.state = STATE_STEPPED
+							msg.ReplyMarkup = inlineKeyboards["Update"]
+						}
 
 						if v.monMsgID != 0 {
 							bot.DeleteMessage(tgbotapi.DeleteMessageConfig{

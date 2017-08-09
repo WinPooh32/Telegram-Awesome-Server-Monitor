@@ -17,6 +17,15 @@ func MakeMainLayout() {
 	inlineKeyboards["MainLayout"] = tgbotapi.NewInlineKeyboardMarkup(row1, row2)
 }
 
+func MakeUpdateLayout(){
+	btn1 := tgbotapi.NewInlineKeyboardButtonData("🔄Refresh", EVENT_REFRESH)
+
+	row1 := tgbotapi.NewInlineKeyboardRow(btn1)
+
+	inlineKeyboards["Update"] = tgbotapi.NewInlineKeyboardMarkup(row1)
+}
+
 func InitKeyboards(){
 	MakeMainLayout()
+	MakeUpdateLayout()
 }
