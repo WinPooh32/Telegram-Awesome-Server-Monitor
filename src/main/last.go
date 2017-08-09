@@ -13,6 +13,7 @@ var Logins = make(map[string] string)
 
 func UpdateLastLogins() []string{
 	cmd := exec.Command("last", "-w", "-a", "-i")
+
 	stdout, _ := cmd.StdoutPipe()
 	cmd.Start()
 
@@ -38,6 +39,9 @@ func UpdateLastLogins() []string{
 			newips = append(newips, ip)
 		}
 	}
+
+	//its very important to use this line, otherwise it will leak tty channels :C
+	cmd.Wait()
 
 	return newips[:]
 }
