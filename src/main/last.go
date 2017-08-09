@@ -54,6 +54,6 @@ func StartMonitoringLast(lastChan chan []string){
 			lastChan <-last
 		}
 
-		time.Sleep(time.Second * 5)
+		time.Sleep(DELAY)
 	}
 }

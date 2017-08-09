@@ -25,12 +25,6 @@ func ShiftPoints(pts []float64){
 }
 
 func StartMonitoringResources(monChan chan *bytes.Buffer){
-	const (
-		DELAY_SEC = 5
-		DELAY = DELAY_SEC * time.Second
-		POINTS = (60 / DELAY_SEC) + 1
-	)
-
 	var (
 		cpuPoints [POINTS]float64
 		ramPoints [POINTS]float64
