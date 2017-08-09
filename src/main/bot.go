@@ -78,8 +78,6 @@ func ServeNewUser(user *User, send chan *API_Request, response chan *API_Respons
 
 			switch message.Command() {
 			case "start":
-				println("START: ", user)
-
 				req := API_Request{
 					request: REQ_SEND,
 					chattable: tgbotapi.NewMessage(user.chatID, "STARTED!"),
@@ -101,7 +99,6 @@ func ServeNewUser(user *User, send chan *API_Request, response chan *API_Respons
 				resp = <- response
 
 			case "stop":
-				println("STOP")
 			}
 
 		case event := <- user.event:
@@ -172,6 +169,7 @@ func ServeBot(token string, monChan chan *bytes.Buffer, lastChan chan []string){
 						}
 
 						msg := tgbotapi.NewPhotoUpload(v.chatID, file)
+						msg.DisableNotification = true
 
 						if v.monMsgID != 0 {
 							bot.DeleteMessage(tgbotapi.DeleteMessageConfig{
