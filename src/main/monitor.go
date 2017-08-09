@@ -24,22 +24,40 @@ func ShiftPoints(pts []float64){
 	}
 }
 
-func StartMonitoringResources(monChan chan *bytes.Buffer){
-	var (
-		cpuPoints [POINTS]float64
-		ramPoints [POINTS]float64
-		xAxisPoints [POINTS]float64
-	)
-
-	//init data arrays
+func InitArrays(cpuPoints []float64, ramPoints []float64, xAxisPoints []float64){
 	for i, _ := range cpuPoints {
 		cpuPoints[i] = 0
 		ramPoints[i] = 0
-		xAxisPoints[i] = float64(i) * DELAY_SEC
+		xAxisPoints[i] = float64(i * DELAY_SEC)
 	}
+}
 
-	//fixme no exit condition
+func StartMonitoringResources(monChan chan *bytes.Buffer, monRestart chan bool){
+	POINTS = (60 / DELAY_SEC) + 1
+
+	var (
+		cpuPoints = make([]float64, POINTS)
+		ramPoints = make([]float64, POINTS)
+		xAxisPoints = make([]float64, POINTS)
+	)
+
+	//init data arrays
+	InitArrays(cpuPoints[:], ramPoints[:], xAxisPoints[:])
+
 	for true {
+		select {
+			case <-monRestart:
+				POINTS = (60 / DELAY_SEC) + 1
+
+				cpuPoints = make([]float64, POINTS)
+				ramPoints = make([]float64, POINTS)
+				xAxisPoints = make([]float64, POINTS)
+
+				InitArrays(cpuPoints[:], ramPoints[:], xAxisPoints[:])
+
+			default:
+		}
+
 		//fixme no errors checks
 		c, _ := cpu.Percent(DELAY, false) // get average % for  DELAY_SEC seconds
 		m, _ := mem.VirtualMemory()

@@ -21,6 +21,7 @@ func main() {
 
 	//channel for sharing plot image
 	var monChan = make(chan *bytes.Buffer)
+	var monRestart = make(chan bool)
 	//channel for last logins list
 	var lastChan = make(chan []string)
 
@@ -29,9 +30,9 @@ func main() {
 
 	InitKeyboards()
 
-	go StartMonitoringResources(monChan)
+	go StartMonitoringResources(monChan, monRestart)
 	go StartMonitoringLast(lastChan)
 
 	log.Printf("Begin to serve bot")
-	ServeBot(ReadToken("token.line"), monChan, lastChan)
+	ServeBot(ReadToken("token.line"), monChan, monRestart, lastChan)
 }

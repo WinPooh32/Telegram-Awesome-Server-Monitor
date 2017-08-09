@@ -22,11 +22,12 @@ type API_Response struct {
 }
 
 type User struct {
-	chatID   int64
-	monMsgID int
-	state    int
-	msg      chan *tgbotapi.Message
-	event    chan *string
+	chatID     int64
+	monMsgID   int
+	state      int
+	msg        chan *tgbotapi.Message
+	event      chan *string
+	monRestart chan bool
 }
 
 func NewUser() User{
@@ -113,6 +114,27 @@ func OnEvent(user *User, event *string, send chan *API_Request, response chan *A
 		case EVENT_TO_LAST:
 			SendText(MakeLastReport(), "Home",true, user, send, response);
 
+		case EVENT_TO_SETTINGS:
+			SendText("Set refresh time of graph update", "Settings",false, user, send, response);
+
+		case EVENT_SET_3:
+			evnt := EVENT_TO_MAIN
+			SetDelay(3)
+			go func(){(*user).monRestart <- true}()
+			OnEvent(user, &evnt, send, response)
+
+		case EVENT_SET_5:
+			evnt := EVENT_TO_MAIN
+			SetDelay(5)
+			go func(){(*user).monRestart <- true}()
+			OnEvent(user, &evnt, send, response)
+
+		case EVENT_SET_10:
+			evnt := EVENT_TO_MAIN
+			SetDelay(10)
+			go func(){(*user).monRestart <- true}()
+			OnEvent(user, &evnt, send, response)
+
 		default:
 			log.Println("Unknown bot event recieved: ", *event)
 	}
@@ -151,7 +173,7 @@ func ServeNewUser(user *User, send chan *API_Request, response chan *API_Respons
 	}
 }
 
-func ServeBot(token string, monChan chan *bytes.Buffer, lastChan chan []string){
+func ServeBot(token string, monChan chan *bytes.Buffer, monRestart chan bool, lastChan chan []string){
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		log.Panic(err)
@@ -257,6 +279,7 @@ func ServeBot(token string, monChan chan *bytes.Buffer, lastChan chan []string){
 
 			if isNew {
 				user.chatID = update.CallbackQuery.Message.Chat.ID
+				user.monRestart = monRestart
 				go ServeNewUser(user, ch_send_msg, ch_response_msg)
 			}
 
@@ -271,6 +294,7 @@ func ServeBot(token string, monChan chan *bytes.Buffer, lastChan chan []string){
 
 			if isNew {
 				user.chatID = update.Message.Chat.ID
+				user.monRestart = monRestart
 				go ServeNewUser(user, ch_send_msg, ch_response_msg)
 			}
 
