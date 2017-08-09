@@ -12,6 +12,7 @@ func ReadToken(filename string)(string) {
 	file,_ := os.Open(filename)
 	reader := bufio.NewReader(file)
 	lineBytes,_,_ := reader.ReadLine()
+	file.Close()
 	return string(lineBytes)
 }
 
