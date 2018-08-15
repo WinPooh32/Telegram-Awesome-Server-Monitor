@@ -1,4 +1,4 @@
-## AwesomeServerMonitor
+## Telegram Awesome Server Monitor
 Telegram bot for monitoring remote server in realtime.
 
 Rendered image example:
